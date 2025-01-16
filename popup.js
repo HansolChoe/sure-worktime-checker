@@ -18,6 +18,7 @@ function updatePopupContent(url, currentTabId) {
           if (chrome.runtime.lastError) {
             console.error(chrome.runtime.lastError.message);
           } else {
+            // 초기 결과 출력
             const timerElement = document.getElementById("timer");
             timerElement.textContent = results[0]?.result || "데이터를 가져오지 못했습니다.";
   
@@ -85,26 +86,50 @@ function updatePopupContent(url, currentTabId) {
     const totalTimeElements = document.querySelectorAll('.tb_content.total_time .txt');
     if (!totalTimeElements.length) return '근무 시간 데이터를 찾을 수 없습니다.';
   
-    // 총 근무 시간 합산
-    let totalMinutes = 0;
+    // 총 근무 시간 합산 (이전 기록)
+    let totalSeconds = 0;
     totalTimeElements.forEach((element) => {
       const timeText = element.textContent.trim();
+      const timeRegex = /(\d+)h\s*(\d+)m\s*(\d+)s/; // h, m, s 추출
+      const match = timeRegex.exec(timeText);
   
-      if (timeText && timeText.includes(':')) {
-        const [hours, minutes] = timeText.split(':').map(Number);
-        if (!isNaN(hours) && !isNaN(minutes)) {
-          totalMinutes += hours * 60 + minutes; // 총 분으로 계산
-        }
+      if (match) {
+        const hours = parseInt(match[1], 10);
+        const minutes = parseInt(match[2], 10);
+        const seconds = parseInt(match[3], 10);
+  
+        totalSeconds += hours * 3600 + minutes * 60 + seconds;
+        console.log(`hours: ${hours}, minutes: ${minutes}, seconds: ${seconds}`);
       }
     });
   
-    // 40시간(2400분)에서 남은 시간 계산
-    const remainingMinutes = Math.max(0, 2400 - totalMinutes);
+    // 오늘의 시간 계산
+    const todayElement = document.querySelector('.tb_attend_list.today');
+    if (todayElement) {
+      const attendElement = todayElement.querySelector('.tb_content.attend .txt');
+      if (attendElement) {
+        // 출근 시간 추출 (중첩 구조 처리)
+        const attendTime = attendElement.childNodes[0]?.textContent.trim();
+        if (attendTime) {
+          const [attendHour, attendMinute, attendSecond] = attendTime.split(':').map(Number);
+          console.log(`attendHour: ${attendHour}, attendMinute: ${attendMinute}, attendSecond: ${attendSecond}`);
+          const attendDate = new Date();
+          attendDate.setHours(attendHour, attendMinute, attendSecond);
+  
+          const now = new Date();
+          totalSeconds += Math.floor((now - attendDate) / 1000); // 현재 시간과 출근 시간 차이
+          
+        }
+      }
+    }
+  
+    // 40시간(144,000초)에서 남은 시간 계산
+    const remainingSeconds = Math.max(0, 144000 - totalSeconds);
   
     // 남은 시간, 분, 초 계산
-    const remainingHours = Math.floor(remainingMinutes / 60);
-    const remainingMins = remainingMinutes % 60;
-    const remainingSecs = 59 - new Date().getSeconds(); // 매초 감소
+    const remainingHours = Math.floor(remainingSeconds / 3600);
+    const remainingMins = Math.floor((remainingSeconds % 3600) / 60);
+    const remainingSecs = remainingSeconds % 60;
   
     // 결과 반환
     return `남은 근무 시간: ${remainingHours}시간 ${remainingMins}분 ${remainingSecs}초`;
