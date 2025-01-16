@@ -1,0 +1,17 @@
+{
+    "manifest_version": 3,
+    "name": "근태관리 도우미",
+    "version": "1.0",
+    "description": "근태관리 사이트 상태를 확인하고 적절한 메시지를 제공합니다.",
+    "permissions": ["tabs", "activeTab", "scripting"],
+    "action": {
+      "default_popup": "popup.html",
+      "default_icon": {
+        "16": "icon.png"
+      }
+    },
+    "background": {
+      "service_worker": "background.js"
+    }
+  }
+  
