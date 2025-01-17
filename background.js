@@ -2,14 +2,7 @@
 function checkAndRedirect(tabId, url) {
     if (!url) return;
   
-    if (url.includes("https://gw.suresofttech.com/app/ehr/timeline/my")) {
-      chrome.scripting.executeScript({
-        target: { tabId: tabId },
-        func: () => {
-          document.body.innerHTML = `<h1>근로 표</h1>`;
-        }
-      });
-    } else {
+    if (!url.includes("https://gw.suresofttech.com/app/ehr/timeline/my")) {
       chrome.scripting.executeScript({
         target: { tabId: tabId },
         func: () => {
