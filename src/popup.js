@@ -1,5 +1,9 @@
 function updatePopupContent(url, currentTabId) {
   const contentDiv = document.getElementById("content");
+  if (!contentDiv) {
+    console.error('Element with id "content" not found');
+    return;
+  }
 
   if (url.includes("https://gw.suresofttech.com/login")) {
     contentDiv.textContent = "로그인을 완료 해주세요";
@@ -73,6 +77,53 @@ function calculateAndDisplayTime() {
     return 'DOM이 로드되지 않았습니다. 잠시 후 다시 시도합니다.';
   }
 
+  function getAttendanceTimes() {
+    const todayElement = document.querySelector('.tb_attend_list.today');
+    if (!todayElement) return null;
+
+    const attendTime = todayElement.querySelector('.tb_content.attend .txt')?.childNodes[0]?.nodeValue.trim();
+    const leaveTime = todayElement.querySelector('.tb_content.leave .txt')?.childNodes[0]?.nodeValue.trim();
+
+    return {
+      lastAttendTime: leaveTime || attendTime,
+      now: new Date(),
+    };
+  }
+
+  function calculateWorkedSeconds(lastAttendTime, now) {
+    if (!lastAttendTime) return 0;
+
+    const [attendHour, attendMinute, attendSecond] = lastAttendTime.split(':').map(Number);
+    const attendDate = new Date();
+    attendDate.setHours(attendHour, attendMinute, attendSecond, 0);
+
+    const lunchStart = new Date();
+    lunchStart.setHours(12, 0, 0, 0);
+
+    const lunchEnd = new Date();
+    lunchEnd.setHours(13, 0, 0, 0);
+
+    let effectiveStart = attendDate;
+
+    if (attendDate >= lunchStart && attendDate < lunchEnd) {
+      effectiveStart = lunchEnd;
+    }
+
+    let timeElapsed = Math.floor((now - effectiveStart) / 1000);
+
+    if (attendDate < lunchStart && now >= lunchEnd) {
+      timeElapsed -= 3600; // Subtract 1 hour for lunch
+    }
+
+    return Math.max(timeElapsed, 0);
+  }
+  function todayTimeToSeconds() {
+    const times = getAttendanceTimes();
+    if (!times || !times.lastAttendTime) return 0;
+
+    return calculateWorkedSeconds(times.lastAttendTime, times.now);
+  }
+
   function totalTimeToSeconds() {
     const todayElement = document.querySelector('.tb_attend_list.today');
     const dayListElement = todayElement ? todayElement.closest('.tb_attend_body') : null;
@@ -90,41 +141,6 @@ function calculateAndDisplayTime() {
       totalSeconds += hours * 3600 + minutes * 60 + seconds;
     });
     return totalSeconds;
-  }
-
-  function todayTimeToSeconds() {
-    const todayElement = document.querySelector('.tb_attend_list.today');
-    if (todayElement) {
-      const attendTime = todayElement.querySelector('.tb_content.attend .txt')?.childNodes[0]?.nodeValue.trim();
-      const leaveTime = todayElement.querySelector('.tb_content.leave .txt')?.childNodes[0]?.nodeValue.trim();
-      const lastAttendTime = leaveTime ? leaveTime : attendTime;
-
-      if (lastAttendTime) {
-        const [attendHour, attendMinute, attendSecond] = lastAttendTime.split(':').map(Number);
-        const attendDate = new Date();
-        attendDate.setHours(attendHour, attendMinute, attendSecond, 0);
-
-        const now = new Date();
-
-        // Handle lunch break: If last attend time is during or after lunch
-        if (attendHour < 12 && now.getHours() >= 13) {
-          // Subtract lunch break (1 hour)
-          const lunchBreak = 3600; // seconds
-          const timeElapsed = Math.floor((now - attendDate) / 1000) - lunchBreak;
-          return Math.max(timeElapsed, 0); // Ensure no negative values
-        } else if (attendHour >= 12 && attendHour < 13) {
-          // If lastAttendTime is during lunch break, adjust to 13:00
-          attendDate.setHours(13, 0, 0, 0);
-          const timeElapsed = Math.floor((now - attendDate) / 1000);
-          return Math.max(timeElapsed, 0);
-        } else {
-          // General case, no lunch break to subtract
-          const timeElapsed = Math.floor((now - attendDate) / 1000);
-          return Math.max(timeElapsed, 0);
-        }
-      }
-    }
-    return 0; // Default case if no attendance data is found
   }
 
   const totalSeconds = totalTimeToSeconds() + todayTimeToSeconds();
