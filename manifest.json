@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "슈어 주40시간 타이머",
-    "version": "0.2",
+    "version": "0.3",
     "description": "주 40시간 타이머",
     "permissions": ["tabs", "scripting"],
     "host_permissions": ["https://gw.suresofttech.com/*"],
