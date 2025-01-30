@@ -143,8 +143,19 @@ function calculateAndDisplayTime() {
     return totalSeconds;
   }
 
+  function secondsToWork() {
+    const todayElement = document.querySelector('.tb_attend_list.today');
+    const dayListElement = todayElement ? todayElement.closest('.tb_attend_body') : null;
+    if (!dayListElement) return 0;
+
+    const weekHolidayList = dayListElement.querySelectorAll('.day_holiday');
+    const numberOfHolidays = weekHolidayList.length;
+    const remainingDays = 5 - numberOfHolidays;
+    return remainingDays * 8 * 60 * 60;
+  }
+
   const totalSeconds = totalTimeToSeconds() + todayTimeToSeconds();
-  const remainingSeconds = Math.max(0, 144000 - totalSeconds);
+  const remainingSeconds = Math.max(0, secondsToWork() - totalSeconds);
   const remainingHours = Math.floor(remainingSeconds / 3600);
   const remainingMins = Math.floor((remainingSeconds % 3600) / 60);
   const remainingSecs = remainingSeconds % 60;
