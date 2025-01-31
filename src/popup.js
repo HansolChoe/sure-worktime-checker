@@ -92,29 +92,34 @@ function calculateAndDisplayTime() {
 
   function calculateWorkedSeconds(lastAttendTime, now) {
     if (!lastAttendTime) return 0;
-
+  
     const [attendHour, attendMinute, attendSecond] = lastAttendTime.split(":").map(Number);
     const attendDate = new Date();
     attendDate.setHours(attendHour, attendMinute, attendSecond, 0);
-
+  
     const lunchStart = new Date();
     lunchStart.setHours(12, 0, 0, 0);
-
+  
     const lunchEnd = new Date();
     lunchEnd.setHours(13, 0, 0, 0);
-
+  
     let effectiveStart = attendDate;
     if (attendDate >= lunchStart && attendDate < lunchEnd) {
       effectiveStart = lunchEnd;
     }
-
+  
+    if (now >= lunchStart && now < lunchEnd) {
+      now = lunchStart; // 12:00으로 고정
+    }
+  
     let timeElapsed = Math.floor((now - effectiveStart) / 1000);
+
     if (attendDate < lunchStart && now >= lunchEnd) {
       timeElapsed -= 3600;
     }
-
+  
     return Math.max(timeElapsed, 0);
-  }
+  }  
 
   function totalTimeToSeconds() {
     const todayElement = document.querySelector(".tb_attend_list.today");
